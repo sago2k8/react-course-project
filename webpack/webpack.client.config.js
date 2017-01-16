@@ -7,9 +7,7 @@ const config = {
   output: {
     filename: 'app.js',
     path: './built/statics',
-    publicPath: process.env.NODE_ENV === 'production'
-      ? 'https://platzi-react-sfs.now.sh'
-      : 'http://localhost:3001/',
+    publicPath: 'http://localhost:3001/',
   },
   module: {
     preLoaders: [
