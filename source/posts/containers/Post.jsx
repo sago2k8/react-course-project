@@ -1,10 +1,12 @@
 import React, { Component, PropTypes } from 'react';
 import { Link } from 'react-router';
 import { FormattedMessage, FormattedPlural } from 'react-intl';
+import { bindActionCreators } from 'redux';
+import { connect } from 'react-redux' ;
 
 import styles from './Post.css';
 
-import api from '../../api';
+import actions from '../../actions';
 
 
 class Post extends Component {
@@ -23,21 +25,13 @@ class Post extends Component {
   }
 
   async initialFetch() {
-    if (!!this.state.user && !!this.state.comments) return this.setState({ loading: false });
-
-    const [
-      user,
-      comments,
-    ] = await Promise.all([
-      !this.state.user ? api.users.getSingle(this.props.userId) : Promise.resolve(null),
-      !this.state.comments ? api.posts.getComments(this.props.id) : Promise.resolve(null),
+    if (this.props.user && !!this.props.comments.size > 0) return this.setState({ loading: false });
+    await Promise.all([
+      this.props.actions.loadUser(this.props.userId),
+      this.props.actions.loadCommentsForPost(this.props.id),
     ]);
 
-    return this.setState({
-      loading: false,
-      user: user || this.state.user,
-      comments: comments || this.state.comments,
-    });
+    return this.setState({ loading: false });
   }
 
   render() {
@@ -53,19 +47,19 @@ class Post extends Component {
         </p>
         {!this.state.loading && (
           <div className={styles.meta}>
-            <Link to={`/user/${this.state.user.id}`} className={styles.user}>
-              {this.state.user.name}
+            <Link to={`/user/${this.props.user.id}`} className={styles.user}>
+              {this.props.user.get('name')}
             </Link>
             <Link to={`/post/${this.props.id}#comments`} className={styles.comments}>
               <FormattedPlural
-                value={this.state.comments.length}
+                value={this.props.comments.length}
                 one={
                   <FormattedMessage id="post.meta.comment" />
                 }
                 other={
                   <FormattedMessage
                     id="post.meta.comments"
-                    values={{ amount: this.state.comments.length }}
+                    values={{ amount: this.props.comments.size }}
                   />
                 }
               />
@@ -93,10 +87,13 @@ Post.propTypes = {
   user: PropTypes.shape({
     id: PropTypes.number,
     name: PropTypes.string,
+    size: PropTypes.number,
+    get: PropTypes.func,
   }),
-  comments: PropTypes.arrayOf(
+  comments: PropTypes.objectOf(
     PropTypes.object,
   ),
+  actions: PropTypes.objectOf(PropTypes.func),
 };
 
 Post.defaultProps = {
@@ -105,5 +102,21 @@ Post.defaultProps = {
   comments: null,
 };
 
+function mapStateToProps(state, props) {
+  return {
+    comments: state
+    .get('comments')
+    .filter(comment => comment.get('postId') === props.id),
+    user: state
+    .get('users')
+    .get(props.userId),
+  };
+}
 
-export default Post;
+function mapDispatchToProps(dispatch) {
+  return {
+    actions: bindActionCreators(actions, dispatch),
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Post);

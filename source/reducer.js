@@ -1,25 +1,70 @@
-const initialState = {
+import { combineReducers } from 'redux-immutable';
+import { fromJS,
+Map as map,
+ } from 'immutable';
+
+const initialState = fromJS({
   posts: {
     page: 1,
-    entities: [],
+    entities: {},
   },
-  comments: [],
+  comments: {},
   users: {},
-};
+});
 
-
-function reducer(state = initialState, action = {}) {
+function postsPageReducer(state = initialState.get('posts').get('page'), action = {}) {
   switch (action.type) {
     case 'SET_POST':
-      return Object.assign({}, state, {
-        posts: Object.assign({}, state.posts, {
-          entities: state.posts.entities.concat(action.payload),
-          page: state.posts.page + 1,
-        }),
-      });
+      return state + 1;
     default:
       return state;
   }
 }
+
+function postsEntitiesReducer(state = initialState.get('posts').get('entities'), action = {}) {
+  switch (action.type) {
+    case 'SET_POST':
+      return action.payload
+        .reduce(
+          (posts, post) => posts.set(post.id, map(post)),
+          state,
+          );
+    default:
+      return state;
+  }
+}
+
+const postReducer = combineReducers({
+  page: postsPageReducer,
+  entities: postsEntitiesReducer,
+});
+
+function commentsReducer(state = initialState.get('comments'), action = {}) {
+  switch (action.type) {
+    case 'SET_COMMENTS':
+      return action.payload
+        .reduce(
+          (comments, comment) => comments.set(comment.id, map(comment)),
+          state,
+          );
+    default:
+      return state;
+  }
+}
+
+function usersReducer(state = initialState.get('users'), action = {}) {
+  switch (action.type) {
+    case 'SET_USER':
+      return state.set(action.payload.id, map(action.payload));
+    default:
+      return state;
+  }
+}
+
+const reducer = combineReducers({
+  posts: postReducer,
+  comments: commentsReducer,
+  users: usersReducer,
+});
 
 export default reducer;

@@ -75,7 +75,8 @@ class Home extends Component {
 
         <section className={styles.list}>
           {this.props.posts
-            .map(post => <Post key={post.id} {...post} />)
+            .map(post => <Post key={post.get('id')} {...post.toJS()} />)
+            .toArray()
           }
           {this.state.loading && (
             <Loading />
@@ -91,13 +92,13 @@ class Home extends Component {
 
 Home.propTypes = {
   actions: PropTypes.objectOf(PropTypes.func),
-  posts: PropTypes.arrayOf(PropTypes.object),
+  posts: PropTypes.objectOf(PropTypes.object),
 };
 
 function mapStateToProps(state) {
   return {
-    posts: state.posts.entities,
-    page: state.posts.page,
+    posts: state.get('posts').get('entities'),
+    page: state.set('posts').get('page'),
   };
 }
 function mapDispatchToProps(dispatch) {
